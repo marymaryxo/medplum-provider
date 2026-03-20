@@ -161,12 +161,11 @@ export function useThreadInbox({
         ?.map((entry) => entry.resource as Communication)
         .filter((r): r is Communication => r !== undefined) || [];
 
-    if (bundle.total !== undefined) {
-      setTotal(bundle.total);
-    }
+    setTotal(bundle.total);
 
     if (parents.length === 0) {
       setThreadMessages([]);
+      setTotal(0);
       return;
     }
 

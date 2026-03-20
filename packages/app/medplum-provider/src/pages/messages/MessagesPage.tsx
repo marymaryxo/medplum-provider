@@ -27,6 +27,7 @@ export function MessagesPage(): JSX.Element {
   const readOnlyMode = rawSearchParams.get('readonly') === '1';
   const viewedProviderRef = rawSearchParams.get('provider') ?? undefined;
   const view = rawSearchParams.get('view');
+  const isDashboardDelegatedView = readOnlyMode && view === 'dashboard';
   const isAdminUser = useMemo(() => isAdminProfile(profile) && getPortalMode() === 'admin', [profile]);
   const showDashboard = isAdminUser && !readOnlyMode && !messageId && view === 'dashboard';
   const communicationSearch = useMemo(() => {
@@ -45,6 +46,9 @@ export function MessagesPage(): JSX.Element {
     const params = new URLSearchParams(searchQuery.startsWith('?') ? searchQuery.substring(1) : searchQuery);
     params.set('readonly', '1');
     params.set('provider', viewedProviderRef);
+    if (isDashboardDelegatedView) {
+      params.set('view', 'dashboard');
+    }
     return `?${params.toString()}`;
   };
 
@@ -67,11 +71,23 @@ export function MessagesPage(): JSX.Element {
         const params = new URLSearchParams(prefix.startsWith('?') ? prefix.substring(1) : prefix);
         params.set('readonly', '1');
         params.set('provider', viewedProviderRef);
+        if (isDashboardDelegatedView) {
+          params.set('view', 'dashboard');
+        }
         prefix = `?${params.toString()}`;
       }
       navigate(`/Communication${prefix}`, { replace: true })?.catch(console.error);
     }
-  }, [communicationSearch, messageId, navigate, normalizedSearch, readOnlyMode, viewedProviderRef, showDashboard]);
+  }, [
+    communicationSearch,
+    messageId,
+    navigate,
+    normalizedSearch,
+    readOnlyMode,
+    viewedProviderRef,
+    showDashboard,
+    isDashboardDelegatedView,
+  ]);
 
   const onChange = (search: SearchRequest): void => {
     navigate(`/Communication${withReadOnlyParams(formatSearchQuery(search))}`)?.catch(console.error);
@@ -103,6 +119,7 @@ export function MessagesPage(): JSX.Element {
     params.set('status', 'in-progress');
     params.set('readonly', '1');
     params.set('provider', providerRef);
+    params.set('view', 'dashboard');
     navigate(`/Communication?${params.toString()}`)?.catch(console.error);
   };
 

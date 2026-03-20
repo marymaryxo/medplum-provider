@@ -140,11 +140,43 @@ export function ThreadInbox(props: ThreadInboxProps): JSX.Element {
     readOnlyMode,
   });
 
+  const totalPages = useMemo(() => {
+    if (loading || total === undefined) {
+      return 0;
+    }
+    return Math.max(1, Math.ceil(total / itemsPerPage));
+  }, [loading, total, itemsPerPage]);
+
   useEffect(() => {
     if (error) {
       showErrorNotification(error);
     }
   }, [error]);
+
+  // Keep pagination on a valid page when data shrinks (e.g. bulk actions/reassignments).
+  // This uses server-reported total and preserves default Medplum pagination semantics.
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+    if (total === undefined) {
+      return;
+    }
+    if (threadMessages.length > 0) {
+      return;
+    }
+    if (currentOffset <= 0) {
+      return;
+    }
+    const lastValidOffset = total > 0 ? Math.floor((total - 1) / itemsPerPage) * itemsPerPage : 0;
+    if (currentOffset === lastValidOffset) {
+      return;
+    }
+    onChange({
+      ...currentSearch,
+      offset: lastValidOffset,
+    });
+  }, [loading, total, threadMessages.length, currentOffset, itemsPerPage, onChange, currentSearch]);
 
   useEffect(() => {
     setPendingAttachments([]);
@@ -544,7 +576,7 @@ export function ThreadInbox(props: ThreadInboxProps): JSX.Element {
                         radius="xl"
                         onClick={handleToggleSelectionMode}
                       >
-                        {selectionMode ? 'Done selecting' : 'Select threads'}
+                        {selectionMode ? 'Clear selection' : 'Select threads'}
                       </Button>
                     )}
                     {!readOnlyMode && (
@@ -616,7 +648,7 @@ export function ThreadInbox(props: ThreadInboxProps): JSX.Element {
                   <Center>
                     <Pagination
                       value={currentPage}
-                      total={Math.ceil(total / itemsPerPage)}
+                      total={totalPages}
                       onChange={(page) => {
                         const offset = (page - 1) * itemsPerPage;
                         onChange({

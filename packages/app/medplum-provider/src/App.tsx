@@ -15,7 +15,7 @@ import {
   IconUsers,
 } from '@tabler/icons-react';
 import type { JSX } from 'react';
-import { Suspense, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router';
 import { DismissableNavIcon } from './components/DismissableNavIcon';
 import { DoseSpotIcon } from './components/DoseSpotIcon';
@@ -61,6 +61,19 @@ export function App(): JSX.Element | null {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [setupDismissed, setSetupDismissed] = useState(() => localStorage.getItem(SETUP_DISMISSED_KEY) === 'true');
+  const navSearchParams = useMemo(() => {
+    const params = new URLSearchParams(searchParams);
+    const isDashboardDelegatedInbox =
+      location.pathname === '/Communication' &&
+      params.get('view') === 'dashboard' &&
+      params.get('readonly') === '1' &&
+      !!params.get('provider');
+    // In delegated dashboard inbox view, suppress "status" for nav matching so Dashboard wins over Messages.
+    if (isDashboardDelegatedInbox) {
+      params.delete('status');
+    }
+    return params;
+  }, [location.pathname, searchParams]);
 
   const handleDismissSetup = (): void => {
     localStorage.setItem(SETUP_DISMISSED_KEY, 'true');
@@ -81,7 +94,7 @@ export function App(): JSX.Element | null {
     <AppShell
       logo={<Logo size={24} />}
       pathname={location.pathname}
-      searchParams={searchParams}
+      searchParams={navSearchParams}
       layoutVersion="v2"
       showLayoutVersionToggle={false}
       menus={
